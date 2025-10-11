@@ -1,13 +1,13 @@
-import simpleGit, { SimpleGit } from 'simple-git';
-import path from 'path';
-import fs from 'fs';
-import chalk from 'chalk';
+import simpleGit, { SimpleGit } from "simple-git";
+import path from "path";
+import fs from "fs";
+import chalk from "chalk";
 
 // Simple spinner implementation since ora v5 has import issues
 class SimpleSpinner {
   private message: string;
   private interval: NodeJS.Timeout | null = null;
-  private frames = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+  private frames = ["⠋", "⠙", "⠹", "⠸", "⠼", "⠴", "⠦", "⠧", "⠇", "⠏"];
   private currentFrame = 0;
 
   constructor(message: string) {
@@ -17,7 +17,9 @@ class SimpleSpinner {
   start(): this {
     process.stdout.write(this.message);
     this.interval = setInterval(() => {
-      process.stdout.write(`\r${this.frames[this.currentFrame]} ${this.message}`);
+      process.stdout.write(
+        `\r${this.frames[this.currentFrame]} ${this.message}`
+      );
       this.currentFrame = (this.currentFrame + 1) % this.frames.length;
     }, 80);
     return this;
@@ -38,7 +40,7 @@ class SimpleSpinner {
       clearInterval(this.interval);
       this.interval = null;
     }
-    process.stdout.write('\r');
+    process.stdout.write("\r");
   }
 }
 
@@ -47,7 +49,7 @@ function ora(message: string): SimpleSpinner {
 }
 
 export class GitManager {
-  private git: SimpleGit;
+  public git: SimpleGit;
 
   constructor(cwd?: string) {
     this.git = simpleGit(cwd);
@@ -68,7 +70,7 @@ export class GitManager {
 
       // Clone the repository
       await this.git.clone(repoUrl, targetDir);
-      
+
       spinner.succeed(chalk.green(`Repository cloned to ${targetDir}`));
     } catch (error: any) {
       spinner.fail(chalk.red(`Failed to clone repository: ${error.message}`));
@@ -96,7 +98,7 @@ export class GitManager {
     try {
       const git = dir ? simpleGit(dir) : this.git;
       const remotes = await git.getRemotes(true);
-      const origin = remotes.find(remote => remote.name === 'origin');
+      const origin = remotes.find((remote) => remote.name === "origin");
       return origin?.refs?.fetch || null;
     } catch (error) {
       return null;
@@ -120,23 +122,23 @@ export class GitManager {
    * Push current branch to remote
    */
   async pushToRemote(dir?: string): Promise<void> {
-    const spinner = ora('Pushing changes to remote repository...').start();
+    const spinner = ora("Pushing changes to remote repository...").start();
 
     try {
       const git = dir ? simpleGit(dir) : this.git;
-      
+
       // Get current branch
       const status = await git.status();
       const currentBranch = status.current;
 
       if (!currentBranch) {
-        throw new Error('No current branch found');
+        throw new Error("No current branch found");
       }
 
       // Push to remote
-      await git.push('origin', currentBranch);
-      
-      spinner.succeed(chalk.green('Changes pushed to remote repository'));
+      await git.push("origin", currentBranch);
+
+      spinner.succeed(chalk.green("Changes pushed to remote repository"));
     } catch (error: any) {
       spinner.fail(chalk.red(`Failed to push changes: ${error.message}`));
       throw error;
@@ -152,14 +154,14 @@ export class GitManager {
     hasChanges: boolean;
   }> {
     const git = dir ? simpleGit(dir) : this.git;
-    
+
     const status = await git.status();
     const remoteUrl = await this.getRemoteUrl(dir);
-    
+
     return {
-      branch: status.current || 'unknown',
+      branch: status.current || "unknown",
       remoteUrl,
-      hasChanges: !status.isClean()
+      hasChanges: !status.isClean(),
     };
   }
 
@@ -172,10 +174,10 @@ export class GitManager {
     if (match) {
       return match[1];
     }
-    
+
     // Fallback: use the last part of the URL
-    const parts = gitUrl.split('/');
-    return parts[parts.length - 1].replace('.git', '');
+    const parts = gitUrl.split("/");
+    return parts[parts.length - 1].replace(".git", "");
   }
 
   /**
@@ -186,9 +188,9 @@ export class GitManager {
       /^https:\/\/github\.com\/[\w\-\.]+\/[\w\-\.]+(?:\.git)?$/,
       /^git@github\.com:[\w\-\.]+\/[\w\-\.]+(?:\.git)?$/,
       /^https:\/\/gitlab\.com\/[\w\-\.]+\/[\w\-\.]+(?:\.git)?$/,
-      /^git@gitlab\.com:[\w\-\.]+\/[\w\-\.]+(?:\.git)?$/
+      /^git@gitlab\.com:[\w\-\.]+\/[\w\-\.]+(?:\.git)?$/,
     ];
 
-    return patterns.some(pattern => pattern.test(url));
+    return patterns.some((pattern) => pattern.test(url));
   }
-} 
+}
