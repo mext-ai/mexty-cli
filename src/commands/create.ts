@@ -108,21 +108,25 @@ export async function createCommand(
     const block = await apiClient.createBlock(blockData);
 
     console.log(chalk.green(`✅ Block created successfully!`));
-    console.log(chalk.gray(`   Block ID: ${block._id}`));
-    console.log(chalk.gray(`   Block Type: ${block.blockType}`));
+    console.log(chalk.gray(`   Block ID: ${block.id || block._id}`));
+    console.log(
+      chalk.gray(`   Block Type: ${block.blockType || block._doc?.blockType}`)
+    );
 
-    if (block.gitUrl) {
-      console.log(chalk.gray(`   GitHub URL: ${block.gitUrl}`));
+    // Handle both plain objects and Mongoose documents
+    const gitUrl = block.gitUrl || block._doc?.gitUrl;
+    if (gitUrl) {
+      console.log(chalk.gray(`   GitHub URL: ${gitUrl}`));
 
       // Clone the repository
-      const repoName = GitManager.extractRepoName(block.gitUrl);
+      const repoName = GitManager.extractRepoName(gitUrl);
       const targetDir = path.join(process.cwd(), repoName);
 
       console.log(chalk.yellow(`📦 Cloning repository to ./${repoName}...`));
 
       try {
         const gitManager = new GitManager();
-        await gitManager.cloneRepository(block.gitUrl, targetDir);
+        await gitManager.cloneRepository(gitUrl, targetDir);
 
         console.log(
           chalk.green(`🎉 Block created and repository cloned successfully!`)
@@ -149,7 +153,7 @@ export async function createCommand(
           chalk.red(`❌ Failed to clone repository: ${cloneError.message}`)
         );
         console.log(chalk.yellow(`You can manually clone it later:`));
-        console.log(chalk.gray(`  git clone ${block.gitUrl}`));
+        console.log(chalk.gray(`  git clone ${gitUrl}`));
       }
     } else {
       console.log(

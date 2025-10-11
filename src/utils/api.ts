@@ -6,7 +6,16 @@ import os from "os";
 
 export interface Block {
   _id: string;
+  id?: string;
   blockType: string;
+  _doc?: {
+    _id: string;
+    blockType: string;
+    title: string;
+    description: string;
+    gitUrl?: string;
+    [key: string]: any;
+  };
   title: string;
   description: string;
   gitUrl?: string;
