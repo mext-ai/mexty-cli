@@ -4,10 +4,8 @@ import { Command } from "commander";
 import chalk from "chalk";
 import { loginCommand } from "./commands/login";
 import { createCommand } from "./commands/create";
-import { forkCommand } from "./commands/fork";
 import { deleteCommand } from "./commands/delete";
 import { publishCommand } from "./commands/publish";
-import { syncCommand } from "./commands/sync";
 import { saveCommand } from "./commands/save";
 import { apiClient } from "./utils/api";
 
@@ -58,24 +56,15 @@ program
   .action(createCommand);
 
 program
-  .command("fork <blockId>")
-  .description("Fork an existing block and clone its repository")
-  .action(forkCommand);
-
-program
   .command("delete <blockId>")
   .description("Delete a block (requires ownership)")
   .action(deleteCommand);
 
 program
   .command("publish")
-  .description("Publish current block with automatic bundling")
+  .description("Publish current block to marketplace (free only)")
+  .option("--agent", "Make block insertable by AI agents", false)
   .action(publishCommand);
-
-program
-  .command("sync")
-  .description("Sync block registry and update typed exports")
-  .action(syncCommand);
 
 program
   .command("save")

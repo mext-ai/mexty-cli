@@ -234,6 +234,24 @@ class ApiClient {
     return response.data;
   }
 
+  async updateBlockSharing(blockId: string, scope: string[]): Promise<any> {
+    const response = await this.client.patch(`/api/blocks/${blockId}/sharing`, {
+      scope,
+    });
+    return response.data;
+  }
+
+  async updateBlockAgentInsertable(
+    blockId: string,
+    isInsertableByAgent: boolean
+  ): Promise<any> {
+    const response = await this.client.patch(
+      `/api/blocks/${blockId}/agent-insertable`,
+      { isInsertableByAgent }
+    );
+    return response.data;
+  }
+
   async healthCheck(): Promise<boolean> {
     try {
       await this.client.get("/api/health");
