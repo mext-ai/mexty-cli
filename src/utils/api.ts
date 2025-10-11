@@ -1,8 +1,8 @@
-import axios, { AxiosInstance, AxiosResponse } from 'axios';
-import chalk from 'chalk';
-import fs from 'fs';
-import path from 'path';
-import os from 'os';
+import axios, { AxiosInstance, AxiosResponse } from "axios";
+import chalk from "chalk";
+import fs from "fs";
+import path from "path";
+import os from "os";
 
 export interface Block {
   _id: string;
@@ -14,13 +14,13 @@ export interface Block {
   courseName?: string;
   allowedBrickTypes: string[];
   allowedBlockTypes?: string[];
-  scope: ('library' | 'user-store' | 'published-store')[];
+  scope: ("library" | "user-store" | "published-store")[];
   content: any[];
   // Fork tracking
   forkedId?: string;
   bundlePath?: string;
   federationUrl?: string;
-  buildStatus?: 'pending' | 'building' | 'success' | 'failed';
+  buildStatus?: "pending" | "building" | "success" | "failed";
   buildError?: string;
   lastBuilt?: Date;
   createdAt: Date;
@@ -73,15 +73,15 @@ class ApiClient {
   private baseUrl: string;
   private tokenPath: string;
 
-  constructor(baseUrl: string = 'https://api.v2.mext.app') {
+  constructor(baseUrl: string = "https://api.mexty.ai") {
     this.baseUrl = baseUrl;
-    this.tokenPath = path.join(os.homedir(), '.mext', 'auth.json');
-    
+    this.tokenPath = path.join(os.homedir(), ".mext", "auth.json");
+
     this.client = axios.create({
       baseURL: baseUrl,
       timeout: 30000,
       headers: {
-        'Content-Type': 'application/json',
+        "Content-Type": "application/json",
       },
     });
 
@@ -102,13 +102,27 @@ class ApiClient {
       (response) => response,
       (error) => {
         if (error.response?.status === 401) {
-          console.error(chalk.red('Authentication required. Please login first: mexty login'));
+          console.error(
+            chalk.red(
+              "Authentication required. Please login first: mexty login"
+            )
+          );
           this.clearStoredToken();
         } else if (error.response) {
-          console.error(chalk.red(`API Error ${error.response.status}: ${error.response.data?.error || error.message}`));
+          console.error(
+            chalk.red(
+              `API Error ${error.response.status}: ${
+                error.response.data?.error || error.message
+              }`
+            )
+          );
         } else if (error.request) {
-          console.error(chalk.red('Network Error: Could not reach MEXT server'));
-          console.error(chalk.yellow(`Make sure the server is running at ${this.baseUrl}`));
+          console.error(
+            chalk.red("Network Error: Could not reach MEXT server")
+          );
+          console.error(
+            chalk.yellow(`Make sure the server is running at ${this.baseUrl}`)
+          );
         } else {
           console.error(chalk.red(`Request Error: ${error.message}`));
         }
@@ -120,7 +134,7 @@ class ApiClient {
   private getStoredToken(): string | null {
     try {
       if (fs.existsSync(this.tokenPath)) {
-        const authData = JSON.parse(fs.readFileSync(this.tokenPath, 'utf8'));
+        const authData = JSON.parse(fs.readFileSync(this.tokenPath, "utf8"));
         return authData.token || null;
       }
     } catch (error) {
@@ -135,16 +149,18 @@ class ApiClient {
       if (!fs.existsSync(authDir)) {
         fs.mkdirSync(authDir, { recursive: true });
       }
-      
+
       const authData = {
         token,
         user,
-        timestamp: new Date().toISOString()
+        timestamp: new Date().toISOString(),
       };
-      
+
       fs.writeFileSync(this.tokenPath, JSON.stringify(authData, null, 2));
     } catch (error: any) {
-      console.warn(chalk.yellow(`Warning: Could not store auth token: ${error.message}`));
+      console.warn(
+        chalk.yellow(`Warning: Could not store auth token: ${error.message}`)
+      );
     }
   }
 
@@ -165,7 +181,7 @@ class ApiClient {
   public getStoredUser(): any {
     try {
       if (fs.existsSync(this.tokenPath)) {
-        const authData = JSON.parse(fs.readFileSync(this.tokenPath, 'utf8'));
+        const authData = JSON.parse(fs.readFileSync(this.tokenPath, "utf8"));
         return authData.user || null;
       }
     } catch (error) {
@@ -175,12 +191,18 @@ class ApiClient {
   }
 
   async createBlock(data: CreateBlockRequest): Promise<Block> {
-    const response: AxiosResponse<Block> = await this.client.post('/api/blocks', data);
+    const response: AxiosResponse<Block> = await this.client.post(
+      "/api/blocks",
+      data
+    );
     return response.data;
   }
 
   async forkBlock(data: ForkBlockRequest): Promise<Block> {
-    const response: AxiosResponse<Block> = await this.client.post('/api/blocks/fork', data);
+    const response: AxiosResponse<Block> = await this.client.post(
+      "/api/blocks/fork",
+      data
+    );
     return response.data;
   }
 
@@ -189,18 +211,23 @@ class ApiClient {
   }
 
   async getBlock(blockId: string): Promise<Block> {
-    const response: AxiosResponse<Block> = await this.client.get(`/api/blocks/${blockId}`);
+    const response: AxiosResponse<Block> = await this.client.get(
+      `/api/blocks/${blockId}`
+    );
     return response.data;
   }
 
   async saveAndBundle(data: SaveAndBundleRequest): Promise<any> {
-    const response = await this.client.post('/api/blocks/save-and-bundle', data);
+    const response = await this.client.post(
+      "/api/blocks/save-and-bundle",
+      data
+    );
     return response.data;
   }
 
   async healthCheck(): Promise<boolean> {
     try {
-      await this.client.get('/api/health');
+      await this.client.get("/api/health");
       return true;
     } catch (error) {
       return false;
@@ -208,24 +235,30 @@ class ApiClient {
   }
 
   async requestOTP(email: string): Promise<AuthResponse> {
-    const response: AxiosResponse<AuthResponse> = await this.client.post('/api/auth/request-otp', { email });
+    const response: AxiosResponse<AuthResponse> = await this.client.post(
+      "/api/auth/request-otp",
+      { email }
+    );
     return response.data;
   }
 
   async verifyOTP(email: string, otp: string): Promise<AuthResponse> {
-    const response: AxiosResponse<AuthResponse> = await this.client.post('/api/auth/verify-otp', { email, otp });
+    const response: AxiosResponse<AuthResponse> = await this.client.post(
+      "/api/auth/verify-otp",
+      { email, otp }
+    );
     const data = response.data;
-    
+
     if (data.success && data.token && data.user) {
       this.storeToken(data.token, data.user);
     }
-    
+
     return data;
   }
 
   async logout(): Promise<void> {
     try {
-      await this.client.post('/api/auth/logout');
+      await this.client.post("/api/auth/logout");
     } catch (error) {
       // Ignore logout errors
     } finally {
@@ -239,4 +272,4 @@ class ApiClient {
   }
 }
 
-export const apiClient = new ApiClient(); 
+export const apiClient = new ApiClient();
