@@ -1,6 +1,6 @@
 {
   "name": "@mexty/cli",
-  "version": "1.4.1",
+  "version": "1.4.2",
   "description": "MEXT CLI for managing blocks and repositories",
   "main": "dist/index.js",
   "bin": {
