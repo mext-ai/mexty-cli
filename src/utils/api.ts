@@ -283,6 +283,17 @@ class ApiClient {
     return data;
   }
 
+  async addBlockToStructure(
+    blockId: string,
+    parentPath?: string
+  ): Promise<any> {
+    const response = await this.client.post("/api/structure/add-block", {
+      blockId,
+      parentPath: parentPath || "/",
+    });
+    return response.data;
+  }
+
   async logout(): Promise<void> {
     try {
       await this.client.post("/api/auth/logout");

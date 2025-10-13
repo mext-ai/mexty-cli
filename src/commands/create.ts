@@ -113,6 +113,20 @@ export async function createCommand(
       chalk.gray(`   Block Type: ${block.blockType || block._doc?.blockType}`)
     );
 
+    // Add the block to user's structure
+    console.log(chalk.yellow("📚 Adding block to your library..."));
+    try {
+      await apiClient.addBlockToStructure(block.id || block._id);
+      console.log(chalk.green(`✅ Block added to your library!`));
+    } catch (structureError: any) {
+      console.warn(
+        chalk.yellow(
+          `⚠️  Block created but couldn't add to library: ${structureError.message}`
+        )
+      );
+      console.log(chalk.gray("   The block is still accessible via the API"));
+    }
+
     // Handle both plain objects and Mongoose documents
     const gitUrl = block.gitUrl || block._doc?.gitUrl;
     if (gitUrl) {

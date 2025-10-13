@@ -226,4 +226,266 @@ Blocks can be marked as "insertable by agent" which allows AI systems to:
 4. Commit and publish with `mexty save`
 5. Share or publish to marketplace
 
+## CLI Commands
+
+The MEXTY CLI provides a complete toolkit for block development and publishing:
+
+### Installation
+
+```bash
+npm install -g @mexty/cli
+```
+
+### Authentication
+
+```bash
+mexty login
+```
+
+Authenticate with your MEXTY account to access all CLI features.
+
+### Block Creation
+
+```bash
+mexty create block --name "Block Name" --description "Description" --category "category"
+```
+
+- Creates a new block via the API
+- Automatically generates a GitHub repository
+- Clones the repository locally
+- Changes to the block directory
+- Sets up the development environment
+
+**Example:**
+
+```bash
+mexty create block --name "Weather Widget" --description "A beautiful weather display component" --category "widget"
+```
+
+### Development & Saving
+
+```bash
+mexty save
+```
+
+- Stages all changes (`git add .`)
+- Prompts for commit message
+- Commits changes to git
+- Pushes to GitHub
+- Triggers the save-and-bundle process to build the block
+
+### Publishing to Marketplace
+
+```bash
+mexty publish [--agent]
+```
+
+- Builds and bundles the block
+- Publishes to the marketplace (free only via CLI)
+- Makes block discoverable by all users
+- Optional `--agent` flag makes block insertable by AI agents (requires Mext staff permissions)
+
+**Example:**
+
+```bash
+mexty publish --agent
+```
+
+### Block Management
+
+```bash
+mexty delete <blockId>
+```
+
+Deletes a block (requires ownership).
+
+### Command Workflow
+
+1. **Create a new block:**
+
+   ```bash
+   mexty create block --name "My Widget" --description "An awesome widget" --category "utility"
+   ```
+
+2. **Develop your block:**
+
+   - Edit `src/block.tsx` to implement your component
+   - Define TypeScript interfaces for props
+   - Test locally with `npm start`
+
+3. **Save your progress:**
+
+   ```bash
+   mexty save
+   ```
+
+4. **Publish to marketplace:**
+   ```bash
+   mexty publish --agent
+   ```
+
+### CLI Features
+
+- **Automatic GitHub Integration**: Creates and manages repositories
+- **TypeScript Support**: Full TypeScript development environment
+- **Props Schema Detection**: Automatically generates props schema from TypeScript interfaces
+- **Federation Bundling**: Creates optimized bundles for embedding
+- **Marketplace Publishing**: One-command publishing to the marketplace
+- **AI Agent Integration**: Optional agent insertability for automated content creation
+
 This system enables rapid creation of interactive content while maintaining consistency, reusability, and ease of customization for end users.
+
+# @mexty/realtime
+
+React hooks for real-time collaborative features using Yjs and Hocuspocus.
+
+## Installation
+
+```bash
+npm install @mexty/realtime
+```
+
+## Usage
+
+```tsx
+import { useCollabSpace } from "@mexty/realtime";
+
+// 🧠 Example 1: Collaborative JSON document editor
+export function DocumentEditor({ blockId }: { blockId: string }) {
+  const { state, update } = useCollabSpace(`block:${blockId}`, {
+    document: {
+      title: "Untitled",
+      content: "Write something...",
+    },
+    game: { weights: [] },
+  });
+
+  // ✅ Partial update usage
+  const handleTitleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    update({ document: { ...state.document, title: e.target.value } });
+  };
+
+  // ✅ Functional update usage
+  const resetContent = () => {
+    update((prev) => ({
+      ...prev,
+      document: { ...prev.document, content: "" },
+    }));
+  };
+
+  return (
+    <div className="p-4 border rounded space-y-3">
+      <h2 className="text-lg font-bold">Collaborative Document</h2>
+      <input
+        type="text"
+        className="border p-2 w-full"
+        value={state.document.title}
+        onChange={handleTitleChange}
+      />
+      <textarea
+        className="border p-2 w-full h-32"
+        value={state.document.content}
+        onChange={(e) =>
+          update({ document: { ...state.document, content: e.target.value } })
+        }
+      />
+      <button
+        onClick={resetContent}
+        className="bg-blue-500 text-white px-3 py-1 rounded"
+      >
+        Reset Content
+      </button>
+    </div>
+  );
+}
+
+// 🧩 Example 2: Multiplayer tower game state
+export function TowerGame({ blockId }: { blockId: string }) {
+  const { state, update } = useCollabSpace(`block:${blockId}`, {
+    document: {},
+    game: { weights: [] as { team: string; pos: number }[] },
+  });
+
+  // ✅ Append new weight (functional update)
+  const addWeight = (team: string) => {
+    update((prev) => ({
+      ...prev,
+      game: {
+        ...prev.game,
+        weights: [...prev.game.weights, { team, pos: Math.random() * 100 }],
+      },
+    }));
+  };
+
+  // ✅ Clear game state (partial update)
+  const resetGame = () => {
+    update({ game: { weights: [] } });
+  };
+
+  return (
+    <div className="p-4 border rounded space-y-3">
+      <h2 className="text-lg font-bold">Tower Game</h2>
+      <button
+        onClick={() => addWeight("blue")}
+        className="bg-blue-600 text-white px-3 py-1 rounded"
+      >
+        Add Blue Weight
+      </button>
+      <button
+        onClick={() => addWeight("red")}
+        className="bg-red-600 text-white px-3 py-1 rounded"
+      >
+        Add Red Weight
+      </button>
+      <button
+        onClick={resetGame}
+        className="bg-gray-600 text-white px-3 py-1 rounded"
+      >
+        Reset Game
+      </button>
+
+      <pre className="bg-gray-100 p-2 text-sm rounded overflow-auto">
+        {JSON.stringify(state.game, null, 2)}
+      </pre>
+    </div>
+  );
+}
+```
+
+## API
+
+### `useCollabSpace(documentName, initialState, options?)`
+
+#### Parameters
+
+- `documentName: string` - Unique identifier for the collaborative document
+- `initialState: T` - Initial state object for the collaborative space
+- `options?: CollabSpaceOptions` - Optional configuration
+
+#### Returns
+
+- `state: T` - Current collaborative state
+- `update: (updateFn: UpdateFunction<T>) => void` - Function to update state
+- `isConnected: boolean` - WebSocket connection status
+- `connectionStatus: 'connecting' | 'connected' | 'disconnected' | 'error'` - Detailed connection status
+- `userId: string` - Anonymous user ID (persisted in localStorage)
+
+#### Options
+
+```tsx
+interface CollabSpaceOptions {
+  websocketUrl?: string;
+  onConnect?: () => void;
+  onDisconnect?: () => void;
+  onError?: (error: Error) => void;
+}
+```
+
+## Features
+
+- 🔄 Real-time collaborative state synchronization
+- 🆔 Anonymous user authentication with persistent IDs
+- 🔗 Automatic WebSocket connection management
+- 📱 React hooks for easy integration
+- 🎯 TypeScript support with full type safety
+- 🏗️ Built on Yjs and Hocuspocus for reliability
