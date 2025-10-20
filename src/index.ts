@@ -8,6 +8,8 @@ import { deleteCommand } from "./commands/delete";
 import { publishCommand } from "./commands/publish";
 import { saveCommand } from "./commands/save";
 import { updateGitUrlCommand } from "./commands/update-git-url";
+import { githubLoginCommand } from "./commands/github-login";
+import { githubDisconnectCommand } from "./commands/github-disconnect";
 import { apiClient } from "./utils/api";
 
 const program = new Command();
@@ -79,6 +81,41 @@ program
   .option("-r, --reset", "Reset to default Mext URL")
   .action((blockId, options) => {
     updateGitUrlCommand(blockId, options.url, options.reset);
+  });
+
+program
+  .command("github-login")
+  .description("Connect your GitHub account for private repository access")
+  .action(githubLoginCommand);
+
+program
+  .command("github-disconnect")
+  .description("Disconnect your GitHub account")
+  .action(githubDisconnectCommand);
+
+program
+  .command("github-status")
+  .description("Check GitHub connection status")
+  .action(async () => {
+    try {
+      if (!apiClient.isAuthenticated()) {
+        console.log(chalk.yellow("⚠️  Please login first: mexty login"));
+        return;
+      }
+
+      const status = await apiClient.getGitHubStatus();
+      
+      if (status.connected) {
+        console.log(chalk.green("✅ GitHub connected"));
+        console.log(chalk.gray(`   Username: ${status.githubUsername}`));
+        console.log(chalk.gray(`   Status: ${status.message}`));
+      } else {
+        console.log(chalk.yellow("❌ GitHub not connected"));
+        console.log(chalk.blue("   Connect with: mexty github-login"));
+      }
+    } catch (error: any) {
+      console.error(chalk.red(`❌ Failed to check status: ${error.message}`));
+    }
   });
 
 // Error handling

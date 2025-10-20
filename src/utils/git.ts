@@ -2,6 +2,7 @@ import simpleGit, { SimpleGit } from "simple-git";
 import path from "path";
 import fs from "fs";
 import chalk from "chalk";
+import { apiClient } from "./api";
 
 // Simple spinner implementation since ora v5 has import issues
 class SimpleSpinner {
@@ -12,6 +13,11 @@ class SimpleSpinner {
 
   constructor(message: string) {
     this.message = message;
+  }
+
+  // Add setter for message text
+  set text(newMessage: string) {
+    this.message = newMessage;
   }
 
   start(): this {
@@ -57,6 +63,7 @@ export class GitManager {
 
   /**
    * Clone a repository to a local directory
+   * Supports private repositories if GitHub is connected
    */
   async cloneRepository(repoUrl: string, targetDir: string): Promise<void> {
     const spinner = ora(`Cloning repository from ${repoUrl}...`).start();
@@ -68,14 +75,65 @@ export class GitManager {
         throw new Error(`Directory ${targetDir} already exists`);
       }
 
+      // Check if this is a GitHub URL that might need authentication
+      const isGitHub = repoUrl.includes('github.com');
+      let authenticatedUrl = repoUrl;
+
+      if (isGitHub) {
+        try {
+          // Try to get GitHub token for private repo access
+          const tokenData = await apiClient.getGitHubToken();
+          
+          if (tokenData.success && tokenData.token) {
+            // Inject token into URL for authenticated cloning
+            authenticatedUrl = this.injectTokenIntoUrl(repoUrl, tokenData.token);
+            spinner.text = `Cloning repository (authenticated)...`;
+          }
+        } catch (error: any) {
+          // If token retrieval fails (e.g., not connected), try without auth
+          // This is fine for public repositories
+          if (error.response?.status === 404) {
+            spinner.text = `Cloning repository (public)...`;
+          }
+        }
+      }
+
       // Clone the repository
-      await this.git.clone(repoUrl, targetDir);
+      await this.git.clone(authenticatedUrl, targetDir);
 
       spinner.succeed(chalk.green(`Repository cloned to ${targetDir}`));
     } catch (error: any) {
-      spinner.fail(chalk.red(`Failed to clone repository: ${error.message}`));
+      // Check if error is due to authentication
+      if (error.message.includes('Authentication failed') || 
+          error.message.includes('could not read Username') ||
+          error.message.includes('Repository not found')) {
+        spinner.fail(chalk.red(`Failed to clone repository: Authentication required`));
+        console.log(chalk.yellow('\n💡 This might be a private repository.'));
+        console.log(chalk.blue('   Connect your GitHub account: mexty github-login\n'));
+      } else {
+        spinner.fail(chalk.red(`Failed to clone repository: ${error.message}`));
+      }
       throw error;
     }
+  }
+
+  /**
+   * Inject GitHub token into repository URL for authenticated access
+   */
+  private injectTokenIntoUrl(repoUrl: string, token: string): string {
+    // Handle HTTPS URLs
+    if (repoUrl.startsWith('https://github.com/')) {
+      return repoUrl.replace('https://github.com/', `https://${token}@github.com/`);
+    }
+    
+    // Handle SSH URLs (convert to HTTPS with token)
+    if (repoUrl.startsWith('git@github.com:')) {
+      const path = repoUrl.replace('git@github.com:', '');
+      return `https://${token}@github.com/${path}`;
+    }
+
+    // Return original URL if format not recognized
+    return repoUrl;
   }
 
   /**
