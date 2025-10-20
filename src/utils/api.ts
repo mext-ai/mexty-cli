@@ -314,22 +314,22 @@ class ApiClient {
 
   // GitHub OAuth methods
   async getGitHubAuthUrl(): Promise<{ success: boolean; url?: string; message: string }> {
-    const response = await this.client.get("/api/auth/github/url");
+    const response = await this.client.get("https://api.mexty.ai/api/auth/github/url");
     return response.data;
   }
 
   async getGitHubStatus(): Promise<{ success: boolean; connected: boolean; githubUsername?: string; message: string }> {
-    const response = await this.client.get("/api/auth/github/status");
+    const response = await this.client.get("https/api/auth/github/status");
     return response.data;
   }
 
   async getGitHubToken(): Promise<{ success: boolean; token?: string; username?: string; expiresAt?: Date; message?: string; expired?: boolean }> {
-    const response = await this.client.get("/api/auth/github/token");
+    const response = await this.client.get("https/api/auth/github/token");
     return response.data;
   }
 
   async disconnectGitHub(): Promise<{ success: boolean; message: string }> {
-    const response = await this.client.post("/api/auth/github/disconnect");
+    const response = await this.client.post("https/api/auth/github/disconnect");
     return response.data;
   }
 
