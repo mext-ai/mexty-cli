@@ -7,6 +7,7 @@ import { createCommand } from "./commands/create";
 import { deleteCommand } from "./commands/delete";
 import { publishCommand } from "./commands/publish";
 import { saveCommand } from "./commands/save";
+import { updateGitUrlCommand } from "./commands/update-git-url";
 import { apiClient } from "./utils/api";
 
 const program = new Command();
@@ -70,6 +71,15 @@ program
   .command("save")
   .description("Save current block (git add, commit, push, and trigger build)")
   .action(saveCommand);
+
+program
+  .command("update-git-url [blockId]")
+  .description("Update the Git repository URL for a block")
+  .option("-u, --url <url>", "New Git URL")
+  .option("-r, --reset", "Reset to default Mext URL")
+  .action((blockId, options) => {
+    updateGitUrlCommand(blockId, options.url, options.reset);
+  });
 
 // Error handling
 program.on("command:*", () => {

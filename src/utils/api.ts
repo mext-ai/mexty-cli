@@ -304,6 +304,14 @@ class ApiClient {
     }
   }
 
+  async updateBlockGitUrl(blockId: string, gitUrl?: string, resetToDefault?: boolean): Promise<any> {
+    const response = await this.client.patch(`/api/blocks/${blockId}/git-url`, {
+      gitUrl,
+      resetToDefault,
+    });
+    return response.data;
+  }
+
   setBaseUrl(url: string): void {
     this.baseUrl = url;
     this.client.defaults.baseURL = url;
