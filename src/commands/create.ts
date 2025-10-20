@@ -132,6 +132,72 @@ export async function createCommand(
     if (gitUrl) {
       console.log(chalk.gray(`   GitHub URL: ${gitUrl}`));
 
+      const blockId = block.id || block._id;
+      
+      // Check if user has GitHub connected and needs to accept invitation
+      try {
+        const githubStatus = await apiClient.getGitHubStatus();
+        
+        if (githubStatus.connected) {
+          // User has GitHub connected, check if they need to accept invitation
+          const invitationStatus = await apiClient.checkGitHubInvitationStatus(blockId);
+          
+          if (!invitationStatus.accepted) {
+            // User needs to accept invitation
+            console.log(chalk.blue(`\n🔐 GitHub Repository Access Required`));
+            console.log(chalk.gray(`   You've been invited as a collaborator to this private repository.`));
+            console.log(chalk.gray(`   You must accept the invitation before cloning.\n`));
+            
+            console.log(chalk.yellow(`📧 Accept your invitation:`));
+            console.log(chalk.cyan(`   ${invitationStatus.invitationUrl}\n`));
+            
+            console.log(chalk.gray(`⏳ Waiting for you to accept the invitation...`));
+            console.log(chalk.gray(`   You have 10 minutes. Checking every 5 seconds.\n`));
+            
+            // Poll for acceptance (10 minutes = 120 attempts at 5 second intervals)
+            const maxAttempts = 120;
+            const pollInterval = 5000; // 5 seconds
+            let attempts = 0;
+            let accepted = false;
+            
+            while (attempts < maxAttempts && !accepted) {
+              await new Promise(resolve => setTimeout(resolve, pollInterval));
+              attempts++;
+              
+              try {
+                const status = await apiClient.checkGitHubInvitationStatus(blockId);
+                if (status.accepted) {
+                  accepted = true;
+                  console.log(chalk.green(`\n✅ Invitation accepted! Proceeding with clone...\n`));
+                  break;
+                }
+                
+                // Show progress every 30 seconds
+                if (attempts % 6 === 0) {
+                  const elapsed = Math.floor((attempts * pollInterval) / 1000);
+                  const remaining = Math.floor(((maxAttempts - attempts) * pollInterval) / 1000);
+                  console.log(chalk.gray(`   Still waiting... (${elapsed}s elapsed, ${remaining}s remaining)`));
+                }
+              } catch (pollError) {
+                // Continue polling even if there's an error
+              }
+            }
+            
+            if (!accepted) {
+              console.error(chalk.red(`\n❌ Timeout: Invitation not accepted within 10 minutes`));
+              console.log(chalk.yellow(`\n💡 You can still accept the invitation later and clone manually:`));
+              console.log(chalk.gray(`   1. Accept invitation: ${invitationStatus.invitationUrl}`));
+              console.log(chalk.gray(`   2. Clone repository: git clone ${gitUrl}`));
+              return;
+            }
+          } else {
+            console.log(chalk.green(`✅ GitHub access confirmed`));
+          }
+        }
+      } catch (githubError: any) {
+        // Silently skip GitHub invitation check if not connected
+      }
+
       // Clone the repository
       const repoName = GitManager.extractRepoName(gitUrl);
       const targetDir = path.join(process.cwd(), repoName);
@@ -166,7 +232,9 @@ export async function createCommand(
         console.error(
           chalk.red(`❌ Failed to clone repository: ${cloneError.message}`)
         );
-        console.log(chalk.yellow(`You can manually clone it later:`));
+        console.log(chalk.yellow(`\n💡 This might be a private repository.`));
+        console.log(chalk.gray(`   Connect your GitHub account: mexty github-login`));
+        console.log(chalk.yellow(`\nYou can manually clone it later:`));
         console.log(chalk.gray(`  git clone ${gitUrl}`));
       }
     } else {

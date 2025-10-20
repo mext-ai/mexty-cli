@@ -98,10 +98,19 @@ export class GitManager {
         }
       }
 
-      // Clone the repository
-      await this.git.clone(authenticatedUrl, targetDir);
-
-      spinner.succeed(chalk.green(`Repository cloned to ${targetDir}`));
+      // Clone the repository using native git command
+      try {
+        const { exec } = await import('child_process');
+        const { promisify } = await import('util');
+        const execAsync = promisify(exec);
+        
+        const cloneCommand = `git clone "${authenticatedUrl}" "${targetDir}"`;
+        await execAsync(cloneCommand);
+        
+        spinner.succeed(chalk.green(`Repository cloned to ${targetDir}`));
+      } catch (cloneErr: any) {
+        throw cloneErr;
+      }
     } catch (error: any) {
       // Check if error is due to authentication
       if (error.message.includes('Authentication failed') || 
@@ -121,19 +130,25 @@ export class GitManager {
    * Inject GitHub token into repository URL for authenticated access
    */
   private injectTokenIntoUrl(repoUrl: string, token: string): string {
+    // GitHub recommends using 'x-access-token' as the username with the token as password
+    // Format: https://x-access-token:{token}@github.com/...
+    
+    // Remove trailing slash if present (can cause issues with git clone)
+    const cleanUrl = repoUrl.replace(/\/$/, '');
+    
     // Handle HTTPS URLs
-    if (repoUrl.startsWith('https://github.com/')) {
-      return repoUrl.replace('https://github.com/', `https://${token}@github.com/`);
+    if (cleanUrl.startsWith('https://github.com/')) {
+      return cleanUrl.replace('https://github.com/', `https://x-access-token:${token}@github.com/`);
     }
     
     // Handle SSH URLs (convert to HTTPS with token)
-    if (repoUrl.startsWith('git@github.com:')) {
-      const path = repoUrl.replace('git@github.com:', '');
-      return `https://${token}@github.com/${path}`;
+    if (cleanUrl.startsWith('git@github.com:')) {
+      const path = cleanUrl.replace('git@github.com:', '');
+      return `https://x-access-token:${token}@github.com/${path}`;
     }
 
     // Return original URL if format not recognized
-    return repoUrl;
+    return cleanUrl;
   }
 
   /**

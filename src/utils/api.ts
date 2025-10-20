@@ -333,6 +333,11 @@ class ApiClient {
     return response.data;
   }
 
+  async checkGitHubInvitationStatus(blockId: string): Promise<{ success: boolean; accepted: boolean; invitationUrl?: string; githubUsername?: string; message?: string }> {
+    const response = await this.client.get(`/api/auth/github/invitation-status/${blockId}`);
+    return response.data;
+  }
+
   setBaseUrl(url: string): void {
     this.baseUrl = url;
     this.client.defaults.baseURL = url;
