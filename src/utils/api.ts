@@ -82,7 +82,7 @@ class ApiClient {
   private baseUrl: string;
   private tokenPath: string;
 
-  constructor(baseUrl: string = "https://api.staging.mexty.ai") {
+  constructor(baseUrl: string = "https://api.mexty.ai") {
     this.baseUrl = baseUrl;
     this.tokenPath = path.join(os.homedir(), ".mext", "auth.json");
 

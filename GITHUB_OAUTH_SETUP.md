@@ -72,18 +72,7 @@ Update `package.json`:
 
 ```bash
 npm run build
-```
-
-## Usage
-
-### Connect GitHub Account
-
-```bash
-mexty github-login
-```
-
-This will:
-1. Request an OAuth URL from the backend
+```i
 2. Open your browser to GitHub authorization page
 3. Redirect back to the backend after authorization
 4. Store your GitHub access token securely
