@@ -20,7 +20,7 @@ program
   .description(
     "MEXT CLI for managing React microfrontend blocks and components"
   )
-  .version("1.0.0");
+  .version("1.12.0");
 
 // Add commands
 program
